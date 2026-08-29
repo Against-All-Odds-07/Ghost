@@ -111,23 +111,6 @@ Ghost/
 
 ---
 
-## Architecture
-
-```text
-Ghoston
-   │
-   │ Tailscale
-   │
-   ▼
-Ghost
-   │
-   ├── Screen Sharing
-   ├── Remote Control
-   ├── File Transfer
-   ├── Messaging
-   ├── Clipboard
-   └── Device Information
-```
 
 ---
 
