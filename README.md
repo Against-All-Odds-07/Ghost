@@ -1,4 +1,4 @@
-# 👻 Ghost
+# Ghost
 
 **Android target app for the Ghost remote-control .**
 
