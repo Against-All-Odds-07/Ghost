@@ -1,0 +1,56 @@
+--- app/src/main/java/com/example/remote/RemoteControlService.kt
++++ app/src/main/java/com/example/remote/RemoteControlService.kt
+@@ -23,7 +23,6 @@
+ import androidx.core.app.NotificationCompat
+ import com.example.MainActivity
+ import com.example.device.DeviceInfoManager
+-import com.example.server.WebServer
+ import com.example.network.ProtocolHandler
+ import com.example.network.RemoteWebSocketServer
+ import com.example.security.PairingManager
+@@ -37,7 +36,6 @@
+ class RemoteControlService : Service() {
+ 
+     private var webSocketServer: RemoteWebSocketServer? = null
+-    private var webServer: WebServer? = null
+     private var protocolHandler: ProtocolHandler? = null
+     private var connectivityManager: ConnectivityManager? = null
+     private var networkCallback: ConnectivityManager.NetworkCallback? = null
+@@ -51,7 +49,6 @@
+         const val ACTION_START = "com.example.remote.START"
+         const val ACTION_STOP = "com.example.remote.STOP"
+         const val SERVER_PORT = 8765
+-        const val WEB_PORT = 8080
+ 
+         private val _serverState = MutableStateFlow<ServerState>(ServerState.Stopped)
+         val serverState: StateFlow<ServerState> = _serverState.asStateFlow()
+@@ -108,9 +105,9 @@
+         val activeIp = tailscaleIp ?: localIp ?: "Connecting..."
+ 
+         val statusText = if (tailscaleIp != null) {
+-            "Web: http://$tailscaleIp:$WEB_PORT\nTailscale: ws://$tailscaleIp:$SERVER_PORT"
++            "Tailscale: ws://$tailscaleIp:$SERVER_PORT"
+         } else if (localIp != null) {
+-            "Web: http://$localIp:$WEB_PORT\nLAN: ws://$localIp:$SERVER_PORT"
++            "LAN: ws://$localIp:$SERVER_PORT"
+         } else {
+             "Waiting for network..."
+         }
+@@ -148,8 +145,6 @@
+                 protocolHandler = ProtocolHandler(applicationContext, deviceInfoManager, pairingManager)
+                 webSocketServer = RemoteWebSocketServer(SERVER_PORT, protocolHandler!!)
+                 webSocketServer?.start()
+-                webServer = WebServer(applicationContext, WEB_PORT)
+-                webServer?.start()
+ 
+                 _serverState.value = ServerState.Running(SERVER_PORT)
+                 Log.d("RemoteControlService", "WebSocket server successfully bound to port $SERVER_PORT")
+@@ -165,8 +160,6 @@
+     @Synchronized
+     private fun stopServer() {
+         try {
+-            webServer?.stop()
+-            webServer = null
+             webSocketServer?.stopGracefully(1000)
+             webSocketServer = null
+             protocolHandler?.shutdown()

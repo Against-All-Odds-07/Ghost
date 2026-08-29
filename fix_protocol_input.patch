@@ -1,0 +1,38 @@
+--- app/src/main/java/com/example/network/ProtocolHandler.kt
++++ app/src/main/java/com/example/network/ProtocolHandler.kt
+@@ -17,6 +17,7 @@
+ import org.java_websocket.WebSocket
+ import java.util.Collections
+ import java.util.concurrent.ConcurrentHashMap
++import com.example.device.GhostAccessibilityService
+ 
+ class ProtocolHandler(
+     private val context: Context,
+@@ -148,15 +149,21 @@
+             "input.tap" -> {
+                 val x = (request.payload?.get("x") as? Number)?.toFloat() ?: 0f
+                 val y = (request.payload?.get("y") as? Number)?.toFloat() ?: 0f
+-                Log.d("ProtocolHandler", "Tap at ($x, $y)")
+-                sendSuccess(conn, request.id, mapOf("action" to "tap", "x" to x, "y" to y, "success" to true))
++                val info = deviceInfoManager.getDeviceInfo()
++                val px = x * info.screenWidth
++                val py = y * info.screenHeight
++                val success = GhostAccessibilityService.instance?.dispatchTap(px, py) ?: false
++                sendSuccess(conn, request.id, mapOf("action" to "tap", "success" to success))
+             }
+             "input.swipe" -> {
+                 val startX = (request.payload?.get("startX") as? Number)?.toFloat() ?: 0f
+                 val startY = (request.payload?.get("startY") as? Number)?.toFloat() ?: 0f
+                 val endX = (request.payload?.get("endX") as? Number)?.toFloat() ?: 0f
+                 val endY = (request.payload?.get("endY") as? Number)?.toFloat() ?: 0f
+                 val duration = (request.payload?.get("duration") as? Number)?.toLong() ?: 300L
+-                Log.d("ProtocolHandler", "Swipe from ($startX, $startY) to ($endX, $endY) in ${duration}ms")
+-                sendSuccess(conn, request.id, mapOf("action" to "swipe", "success" to true))
++                val info = deviceInfoManager.getDeviceInfo()
++                val success = GhostAccessibilityService.instance?.dispatchSwipe(
++                    startX * info.screenWidth, startY * info.screenHeight,
++                    endX * info.screenWidth, endY * info.screenHeight, duration
++                ) ?: false
++                sendSuccess(conn, request.id, mapOf("action" to "swipe", "success" to success))
+             }
+             "input.key" -> {

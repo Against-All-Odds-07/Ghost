@@ -1,0 +1,25 @@
+--- app/src/main/java/com/example/device/ScreenCaptureHelper.kt
++++ app/src/main/java/com/example/device/ScreenCaptureHelper.kt
+@@ -40,7 +40,6 @@
+                                 try {
+                                     val hwBuffer = screenshot.hardwareBuffer
+                                     val bitmap = Bitmap.wrapHardwareBuffer(hwBuffer, screenshot.colorSpace)
+-                                    hwBuffer.close()
+                                     if (bitmap != null) {
+                                         val scaledBitmap = if (scale < 1.0f) {
+                                             val m = Matrix()
+@@ -58,6 +57,7 @@
+                                             scaledBitmap.recycle()
+                                         }
+                                         bitmap.recycle()
++                                        hwBuffer.close()
+ 
+                                         continuation.resume(mapOf(
+                                             "image" to "data:image/jpeg;base64,$base64",
+@@ -67,6 +67,7 @@
+                                         ))
+                                     } else {
++                                        hwBuffer.close()
+                                         continuation.resume(generateFallbackFrame(deviceInfo, quality, scale))
+                                     }
+                                 } catch (e: Exception) {

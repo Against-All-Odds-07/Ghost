@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Ghost</string>
+    <string name="accessibility_description">Allows Ghost to remotely control navigation gestures like Back, Home, and Recents.</string>
+    <string name="accessibility_summary">Remote Control Service</string>
+</resources>
