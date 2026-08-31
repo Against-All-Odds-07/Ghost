@@ -83,6 +83,14 @@ class RemoteControlViewModel(application: Application) : AndroidViewModel(applic
         RemoteControlService.stopService(getApplication())
     }
 
+    fun setCustomPairingCode(newPin: String): Boolean {
+        val trimmed = newPin.trim()
+        if (trimmed.isEmpty()) return false
+        val saved = pairingManager.setCustomPairingCode(trimmed)
+        _pairingCode.value = saved
+        return true
+    }
+
     fun refreshPairingCode() {
         val newCode = pairingManager.generatePairingCode()
         _pairingCode.value = newCode

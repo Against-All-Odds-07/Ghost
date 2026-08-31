@@ -27,6 +27,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.PowerSettingsNew
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
@@ -35,10 +37,14 @@ import androidx.compose.material.icons.outlined.BatteryChargingFull
 import androidx.compose.material.icons.outlined.BatteryFull
 import androidx.compose.material.icons.outlined.Cast
 import androidx.compose.material.icons.outlined.Devices
+import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.PhoneAndroid
 import androidx.compose.material.icons.outlined.Power
 import androidx.compose.material.icons.outlined.Storage
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -174,19 +180,12 @@ fun RemoteControlScreen(viewModel: RemoteControlViewModel, modifier: Modifier = 
             modifier = Modifier.size(24.dp)
           )
         }
-        Column {
-          Text(
-            text = "Ghost",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onBackground
-          )
-          Text(
-            text = "${deviceInfo.deviceName} (${deviceInfo.orientation})",
-            fontSize = 11.sp,
-            color = Muted
-          )
-        }
+        Text(
+          text = "Ghost",
+          fontSize = 20.sp,
+          fontWeight = FontWeight.SemiBold,
+          color = MaterialTheme.colorScheme.onBackground
+        )
       }
       
       Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -375,38 +374,44 @@ fun RemoteControlScreen(viewModel: RemoteControlViewModel, modifier: Modifier = 
           verticalAlignment = Alignment.CenterVertically
         ) {
           Text(
-            text = "ONE-TIME PAIRING CODE",
+            text = "STATIC PAIRING PIN",
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium,
             color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
             letterSpacing = 1.5.sp
           )
           IconButton(
-            onClick = { viewModel.refreshPairingCode() },
-            modifier = Modifier.size(32.dp).testTag("refresh_pairing_code_button")
+            onClick = { showSettingsSheet = true },
+            modifier = Modifier.size(32.dp).testTag("edit_pairing_code_button")
           ) {
             Icon(
-              imageVector = Icons.Filled.Refresh,
-              contentDescription = "Generate New Pairing Code",
+              imageVector = Icons.Filled.Edit,
+              contentDescription = "Edit Custom PIN in Settings",
               tint = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f),
               modifier = Modifier.size(18.dp)
             )
           }
         }
         
-        Spacer(modifier = Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(bottom = 14.dp)) {
+        Spacer(modifier = Modifier.height(14.dp))
+        Row(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 14.dp),
+          horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
           pairingCode.forEach { char ->
             Box(
               modifier = Modifier
-                .size(48.dp, 58.dp)
+                .weight(1f)
+                .height(56.dp)
                 .background(MaterialTheme.colorScheme.background.copy(alpha = 0.12f), RoundedCornerShape(12.dp))
                 .border(1.dp, MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.25f), RoundedCornerShape(12.dp)),
               contentAlignment = Alignment.Center
             ) {
               Text(
                 text = char.toString(),
-                fontSize = 28.sp,
+                fontSize = 24.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onPrimary
               )
@@ -415,7 +420,7 @@ fun RemoteControlScreen(viewModel: RemoteControlViewModel, modifier: Modifier = 
         }
         
         Text(
-          text = "Enter this 6-digit code in the Ghost Windows App to establish an authenticated, persistent token session.",
+          text = "Enter this static PIN in the Ghost client, or customize your PIN anytime in Settings (⚙️).",
           fontSize = 12.sp,
           color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.75f),
           textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -640,6 +645,108 @@ fun RemoteControlScreen(viewModel: RemoteControlViewModel, modifier: Modifier = 
           )
           IconButton(onClick = { showSettingsSheet = false }) {
             Text("Done", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+          }
+        }
+
+        // Custom Static Pairing PIN Setting
+        var customPinInput by remember(pairingCode) { mutableStateOf(pairingCode) }
+        var pinSavedFeedback by remember { mutableStateOf(false) }
+
+        Card(
+          shape = RoundedCornerShape(20.dp),
+          colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+          modifier = Modifier.fillMaxWidth().testTag("custom_pin_settings_card")
+        ) {
+          Column(
+            modifier = Modifier
+              .fillMaxWidth()
+              .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+          ) {
+            Row(
+              horizontalArrangement = Arrangement.spacedBy(12.dp),
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              Icon(
+                imageVector = Icons.Outlined.Lock,
+                contentDescription = "Pairing PIN Lock Icon",
+                tint = MaterialTheme.colorScheme.primary
+              )
+              Column {
+                Text(
+                  text = "Custom Pairing PIN",
+                  fontSize = 16.sp,
+                  fontWeight = FontWeight.SemiBold,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                  text = "Set a permanent static PIN to pair and connect remote clients.",
+                  fontSize = 12.sp,
+                  color = Muted
+                )
+              }
+            }
+
+            OutlinedTextField(
+              value = customPinInput,
+              onValueChange = { input ->
+                if (input.length <= 12) {
+                  customPinInput = input
+                  pinSavedFeedback = false
+                }
+              },
+              label = { Text("Pairing Security PIN") },
+              singleLine = true,
+              keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Number,
+                imeAction = ImeAction.Done
+              ),
+              modifier = Modifier.fillMaxWidth().testTag("custom_pin_input"),
+              shape = RoundedCornerShape(12.dp),
+              trailingIcon = {
+                if (pinSavedFeedback) {
+                  Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = "PIN Saved",
+                    tint = MaterialTheme.colorScheme.tertiary
+                  )
+                }
+              }
+            )
+
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              OutlinedButton(
+                onClick = {
+                  viewModel.refreshPairingCode()
+                  customPinInput = viewModel.pairingCode.value
+                  pinSavedFeedback = true
+                },
+                modifier = Modifier.weight(1f).testTag("generate_random_pin_button"),
+                shape = RoundedCornerShape(12.dp)
+              ) {
+                Text("Generate 6-Digit", fontSize = 12.sp)
+              }
+
+              Button(
+                onClick = {
+                  if (customPinInput.isNotBlank()) {
+                    viewModel.setCustomPairingCode(customPinInput)
+                    pinSavedFeedback = true
+                  }
+                },
+                modifier = Modifier.weight(1f).testTag("save_custom_pin_button"),
+                shape = RoundedCornerShape(12.dp)
+              ) {
+                Text(
+                  if (pinSavedFeedback) "Saved ✓" else "Save PIN",
+                  fontSize = 12.sp,
+                  fontWeight = FontWeight.Bold
+                )
+              }
+            }
           }
         }
 

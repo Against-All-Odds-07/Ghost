@@ -26,9 +26,15 @@ class RemoteControlUnitTest {
         val pairingManager = PairingManager.getInstance(context)
 
         val code = pairingManager.currentPairingCode
-        assertEquals(6, code.length)
+        assertTrue(code.isNotEmpty())
         assertTrue(pairingManager.verifyPairingCode(code))
         assertFalse(pairingManager.verifyPairingCode("000000_wrong"))
+
+        val customCode = "998877"
+        pairingManager.setCustomPairingCode(customCode)
+        assertEquals(customCode, pairingManager.currentPairingCode)
+        assertTrue(pairingManager.verifyPairingCode("998877"))
+        assertFalse(pairingManager.verifyPairingCode("112233"))
 
         val newCode = pairingManager.generatePairingCode()
         assertEquals(6, newCode.length)

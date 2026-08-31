@@ -16,16 +16,10 @@ class PairingManager private constructor(context: Context) {
     var currentPairingCode: String = ""
         private set
 
-    init {
-        deviceId = prefs.getString("device_id", null) ?: run {
-            val newId = "DEVICE-${UUID.randomUUID().toString().substring(0, 8).uppercase()}"
-            prefs.edit().putString("device_id", newId).apply()
-            newId
-        }
-        generatePairingCode()
-    }
-
     companion object {
+        private const val KEY_CUSTOM_PAIRING_CODE = "custom_pairing_code"
+        private const val DEFAULT_PAIRING_CODE = "123456"
+
         @Volatile
         private var instance: PairingManager? = null
 
@@ -36,13 +30,33 @@ class PairingManager private constructor(context: Context) {
         }
     }
 
+    init {
+        deviceId = prefs.getString("device_id", null) ?: run {
+            val newId = "DEVICE-${UUID.randomUUID().toString().substring(0, 8).uppercase()}"
+            prefs.edit().putString("device_id", newId).apply()
+            newId
+        }
+        currentPairingCode = prefs.getString(KEY_CUSTOM_PAIRING_CODE, null) ?: run {
+            prefs.edit().putString(KEY_CUSTOM_PAIRING_CODE, DEFAULT_PAIRING_CODE).apply()
+            DEFAULT_PAIRING_CODE
+        }
+    }
+
+    fun setCustomPairingCode(newCode: String): String {
+        val clean = newCode.trim().ifEmpty { DEFAULT_PAIRING_CODE }
+        currentPairingCode = clean
+        prefs.edit().putString(KEY_CUSTOM_PAIRING_CODE, clean).apply()
+        return currentPairingCode
+    }
+
     fun generatePairingCode(): String {
-        currentPairingCode = String.format("%06d", Random.nextInt(1000000))
+        val newCode = String.format("%06d", Random.nextInt(1000000))
+        setCustomPairingCode(newCode)
         return currentPairingCode
     }
 
     fun verifyPairingCode(code: String): Boolean {
-        return code.trim() == currentPairingCode
+        return code.trim().equals(currentPairingCode.trim(), ignoreCase = true)
     }
 
     /**
